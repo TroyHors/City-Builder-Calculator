@@ -1,4 +1,4 @@
-# 🏭 生产依赖计算器（可视化版）
+# 生产依赖计算器（可视化版）
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
@@ -7,8 +7,7 @@
 
 > 一个功能强大的本地HTML应用，用于计算和可视化生产链的依赖关系，支持工厂数量计算、人口管理和资源需求分析。
 
-![应用截图](https://via.placeholder.com/800x400/f3f4f6/374151?text=生产依赖计算器+可视化界面)
-
+![应用截图](https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEG9HBpFLYwBXY12dDRx9U7xhej1CiGHgACakAAAuMZqVRhqgPBXfbaeDYE.png)
 ## ✨ 特性亮点
 
 - 🌐 **纯本地运行** - 无需服务器，双击HTML文件即可使用

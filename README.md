@@ -1,25 +1,23 @@
 # 生产依赖计算器（可视化版）
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 > 一个功能强大的本地HTML应用，用于计算和可视化生产链的依赖关系，支持工厂数量计算、人口管理和资源需求分析。
+#### **重要提醒**：数据只会自动保存到浏览器本地存储，建议定期使用"导出数据"功能进行手动备份！
 
-![应用截图](https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEG9HBpFLYwBXY12dDRx9U7xhej1CiGHgACakAAAuMZqVRhqgPBXfbaeDYE.png)
-## ✨ 特性亮点
+## 特性亮点
 
-- 🌐 **纯本地运行** - 无需服务器，双击HTML文件即可使用
-- 💾 **数据持久化** - 自动保存到浏览器本地存储，刷新页面数据仍在
-- 📊 **可视化图表** - 智能生成生产链依赖关系图
-- 🔄 **动态计算** - 实时计算工厂数量和资源需求
-- 📁 **多格式支持** - JSON完整备份，Excel/CSV批量编辑
-- 🎨 **现代化UI** - 响应式设计，直观的用户界面
+-  **灵活应用** - 支持手动配置工厂、人口等数据，不同场景灵活运用
+-  **可视化图表** - 智能生成生产链依赖关系图
+-  **动态计算** - 实时计算工厂数量和资源需求
+-  **多格式支持** - JSON完整备份，Excel/CSV批量编辑
+-  **纯本地运行** - 无需服务器，双击HTML文件即可使用
+-  **数据持久化** - 自动保存到浏览器本地存储，刷新页面数据仍在
 
-## 🚀 快速开始
 
-## 🎮 使用场景
+## 使用场景
 
 ### 游戏应用
 - **城市建造游戏**：Anno系列、城市天际线等生产链规划
@@ -32,7 +30,8 @@
 - **项目管理**：资源需求分析
 
 
-### 安装使用
+
+## 安装使用
 
 1. **下载文件**
    ```bash
@@ -184,7 +183,6 @@
 ### 开发环境
 ```bash
 # 无需构建步骤，直接编辑HTML文件
-# 推荐使用支持语法高亮的编辑器
 ```
 
 ### 代码结构
@@ -193,19 +191,11 @@
 - **样式系统**：TailwindCSS + 自定义CSS
 - **状态管理**：React Hooks
 
-### 提交规范
-- 🎨 UI优化
-- 🐛 Bug修复
-- ✨ 新功能
-- 📝 文档更新
-- 🔧 代码重构
-
 ## 📊 性能特点
 
 - **轻量级**：单文件应用，无需安装
-- **快速响应**：本地计算，毫秒级响应
 - **内存友好**：高效的算法实现
-- **离线可用**：完全离线运行
+- **离线可用**：本地计算，完全离线运行
 
 ## 🔒 数据安全
 
@@ -213,15 +203,6 @@
 - **隐私保护**：完全在本地浏览器中运行
 - **数据备份**：支持JSON导出进行手动备份
 - **版本兼容**：向后兼容的数据格式
-
-## 📞 支持与反馈
-
-### 问题报告
-如果遇到问题，请提供以下信息：
-- 浏览器版本和操作系统
-- 具体的操作步骤
-- 控制台错误信息（F12查看）
-- 数据文件（如果涉及）
 
 ### 功能建议
 欢迎提出功能建议和改进意见！
@@ -246,4 +227,3 @@
 
 ---
 
-**💾 重要提醒**：数据自动保存到浏览器本地存储，建议定期使用"导出数据"功能进行手动备份！

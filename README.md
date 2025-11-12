@@ -1,2 +1,250 @@
-# City-Builder-Calculator
-A calculator for city-building and economic management games like Anno  series and Manor Lords. Supports inputting recipes and population data to automatically calculate production rate per second, demand, and required factory count, generating dependency trees. Data can be imported/exported via Excel templates, JSON, or CSV files.
+# 🏭 生产依赖计算器（可视化版）
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+
+> 一个功能强大的本地HTML应用，用于计算和可视化生产链的依赖关系，支持工厂数量计算、人口管理和资源需求分析。
+
+![应用截图](https://via.placeholder.com/800x400/f3f4f6/374151?text=生产依赖计算器+可视化界面)
+
+## ✨ 特性亮点
+
+- 🌐 **纯本地运行** - 无需服务器，双击HTML文件即可使用
+- 💾 **数据持久化** - 自动保存到浏览器本地存储，刷新页面数据仍在
+- 📊 **可视化图表** - 智能生成生产链依赖关系图
+- 🔄 **动态计算** - 实时计算工厂数量和资源需求
+- 📁 **多格式支持** - JSON完整备份，Excel/CSV批量编辑
+- 🎨 **现代化UI** - 响应式设计，直观的用户界面
+
+## 🚀 快速开始
+
+## 🎮 使用场景
+
+### 游戏应用
+- **城市建造游戏**：Anno系列、城市天际线等生产链规划
+- **工厂游戏**：异星工厂、戴森球计划等资源配置优化
+- **策略游戏**：文明系列、环世界等经济系统分析
+
+### 实际应用
+- **制造业**：生产线规划和产能计算
+- **供应链**：物料需求计划(MRP)
+- **项目管理**：资源需求分析
+
+
+### 安装使用
+
+1. **下载文件**
+   ```bash
+   # 克隆仓库
+   git clone https://github.com/your-username/production-calculator.git
+   
+   # 或直接下载 生产计算器.html 文件
+   ```
+
+2. **打开应用**
+   - 双击 `生产计算器.html` 文件
+   - 或在浏览器中打开该文件
+
+3. **开始使用**
+   - 添加产品名称
+   - 创建生产配方
+   - 查看可视化结果
+
+### 基本操作
+
+| 操作 | 说明 |
+|------|------|
+| **添加产品** | 在"产品列表"标签页添加所有需要的产品名称 |
+| **创建配方** | 在"配方管理"标签页为每个产品创建生产配方 |
+| **设置人口** | 在"人口管理"标签页定义人口类型和消耗 |
+| **查看结果** | 右侧自动显示计算结果和可视化图表 |
+
+## 🎯 核心功能
+
+### 📊 数据管理
+- **本地存储**：数据自动保存到浏览器本地存储
+- **导出功能**：支持JSON、Excel格式导出
+- **导入功能**：支持JSON、Excel、CSV格式导入
+- **数据清空**：一键清空所有数据
+
+### 🏭 生产配方
+- **产品管理**：添加、编辑、删除产品列表
+- **配方编辑**：设置生产时间、产量、投入材料
+- **用工需求**：配置每个工厂的人力需求
+- **期望产量**：设置每种产品的期望净产量
+
+### 👥 人口系统
+- **人口种类**：定义不同类型的人口（工人、技师等）
+- **理想人数**：设置每种人口的理想数量
+- **消耗配置**：设置每人每秒的资源消耗
+
+### 📈 可视化分析
+- **依赖关系图**：自动生成生产链的可视化依赖图
+- **智能布局**：按依赖关系自动排列节点位置
+- **手动调整**：支持手动拖拽调整节点位置
+
+## 🛠️ 技术架构
+
+### 前端技术栈
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| React | 18.x | 用户界面框架 |
+| ReactFlow | 11.x | 流程图可视化 |
+| TailwindCSS | 3.x | CSS框架 |
+| Babel | 7.x | JSX转换 |
+| XLSX.js | 0.x | Excel文件处理 |
+
+### 核心算法
+
+- **拓扑排序**：解决生产依赖关系，检测循环依赖
+- **贪心算法**：优化连接点分配，减少连接线交叉
+- **迭代计算**：处理人口消耗反馈循环
+- **图论算法**：自动布局和层级计算
+
+## 📋 数据格式
+
+### 配方数据结构
+
+```json
+{
+  "id": "unique_id",
+  "product": "产品名称",
+  "timeSec": 2.0,
+  "outQty": 1,
+  "desiredPerSec": 0.5,
+  "inputs": [
+    {"item": "原料名", "qty": 2}
+  ],
+  "staff": [
+    {"pop": "工人", "cnt": 3}
+  ],
+  "note": "备注信息"
+}
+```
+
+### 人口数据结构
+
+```json
+{
+  "id": "unique_id",
+  "name": "人口名称",
+  "ideal": 10,
+  "inputs": [
+    {"item": "食物", "rate": 0.01}
+  ]
+}
+```
+
+### Excel/CSV格式
+
+#### 配方表格 (recipes)
+| product | timeSec | outQty | desiredPerSec | inputs | staff | note |
+|---------|---------|--------|---------------|--------|-------|------|
+| 木材 | 2 | 1 | 0 | 木头:1 | 工人:2 | 备注 |
+
+#### 人口表格 (populations)
+| name | ideal | inputs |
+|------|-------|--------|
+| 工人 | 5 | 木炭:0.02 |
+
+
+## 🔄 版本历史
+
+### v1.1 (当前版本)
+- ✅ 动态连接点系统
+- ✅ 智能连接线避让算法
+- ✅ 统一的UI设计语言
+- ✅ 固定编辑面板
+- ✅ 点击编辑交互模式
+
+### v1.0
+- ✅ 基础生产依赖计算
+- ✅ 可视化依赖关系图
+- ✅ 本地存储功能
+- ✅ JSON/Excel导入导出
+
+## 🖥️ 系统要求
+
+### 浏览器支持
+- ✅ Chrome 80+
+- ✅ Firefox 75+
+- ✅ Safari 13+
+- ✅ Edge 80+
+
+### 功能要求
+- JavaScript ES6+ 支持
+- LocalStorage 支持
+- File API 支持
+
+
+## 🤝 贡献指南
+
+### 开发环境
+```bash
+# 无需构建步骤，直接编辑HTML文件
+# 推荐使用支持语法高亮的编辑器
+```
+
+### 代码结构
+- **HTML结构**：标准HTML5文档
+- **React组件**：使用Babel在线转换JSX
+- **样式系统**：TailwindCSS + 自定义CSS
+- **状态管理**：React Hooks
+
+### 提交规范
+- 🎨 UI优化
+- 🐛 Bug修复
+- ✨ 新功能
+- 📝 文档更新
+- 🔧 代码重构
+
+## 📊 性能特点
+
+- **轻量级**：单文件应用，无需安装
+- **快速响应**：本地计算，毫秒级响应
+- **内存友好**：高效的算法实现
+- **离线可用**：完全离线运行
+
+## 🔒 数据安全
+
+- **本地存储**：数据不会上传到任何服务器
+- **隐私保护**：完全在本地浏览器中运行
+- **数据备份**：支持JSON导出进行手动备份
+- **版本兼容**：向后兼容的数据格式
+
+## 📞 支持与反馈
+
+### 问题报告
+如果遇到问题，请提供以下信息：
+- 浏览器版本和操作系统
+- 具体的操作步骤
+- 控制台错误信息（F12查看）
+- 数据文件（如果涉及）
+
+### 功能建议
+欢迎提出功能建议和改进意见！
+
+## 🙏 致谢
+
+感谢以下开源项目：
+- [React](https://reactjs.org/) - 用户界面框架
+- [ReactFlow](https://reactflow.dev/) - 流程图可视化
+- [TailwindCSS](https://tailwindcss.com/) - CSS框架
+- [XLSX.js](https://sheetjs.com/) - Excel文件处理
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对你有帮助，请给个Star支持一下！**
+
+[🐛 报告问题](../../issues) · [💡 功能建议](../../issues) · [📖 文档](../../wiki)
+
+</div>
+
+---
+
+**💾 重要提醒**：数据自动保存到浏览器本地存储，建议定期使用"导出数据"功能进行手动备份！

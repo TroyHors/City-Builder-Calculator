@@ -263,6 +263,118 @@
                 );
             }
             
+            // 示例数据
+            const EXAMPLE_DATA = {
+                "recipes": [
+                    {
+                        "id": "ajyulk2",
+                        "product": "木头",
+                        "timeSec": 1,
+                        "outQty": 1,
+                        "desiredPerSec": 0,
+                        "inputs": [],
+                        "staff": [
+                            {
+                                "pop": "农民",
+                                "cnt": 1
+                            }
+                        ],
+                        "note": ""
+                    },
+                    {
+                        "id": "lxhn1yw",
+                        "product": "木材",
+                        "timeSec": 2,
+                        "outQty": 1,
+                        "desiredPerSec": 0,
+                        "inputs": [
+                            {
+                                "item": "木头",
+                                "qty": 1
+                            }
+                        ],
+                        "staff": [
+                            {
+                                "pop": "农民",
+                                "cnt": 3
+                            }
+                        ],
+                        "note": ""
+                    },
+                    {
+                        "id": "pr69rac",
+                        "product": "木炭",
+                        "timeSec": 2,
+                        "outQty": 2,
+                        "desiredPerSec": 1,
+                        "inputs": [
+                            {
+                                "item": "木头",
+                                "qty": 1
+                            },
+                            {
+                                "item": "木材",
+                                "qty": 1
+                            }
+                        ],
+                        "staff": [
+                            {
+                                "pop": "工人",
+                                "cnt": 3
+                            }
+                        ],
+                        "note": ""
+                    }
+                ],
+                "products": [
+                    "木头",
+                    "木材",
+                    "木炭"
+                ],
+                "populations": [
+                    {
+                        "id": "crsnzmd",
+                        "name": "农民",
+                        "ideal": 0,
+                        "inputs": [
+                            {
+                                "item": "木炭",
+                                "rate": 0.005
+                            }
+                        ]
+                    },
+                    {
+                        "id": "6un0oxs",
+                        "name": "工人",
+                        "ideal": 5,
+                        "inputs": [
+                            {
+                                "item": "木炭",
+                                "rate": 0.01
+                            }
+                        ]
+                    }
+                ],
+                "positionsMemory": {
+                    "木材": {
+                        "x": 440,
+                        "y": 80
+                    },
+                    "木炭": {
+                        "x": 100,
+                        "y": 260
+                    },
+                    "木头": {
+                        "x": -380,
+                        "y": 100
+                    }
+                },
+                "manualPositions": {},
+                "autoLayout": true,
+                "version": "1.1"
+            };
+
+
             // 本地存储管理
             const STORAGE_KEY = 'production_calculator_data';
 
@@ -1320,6 +1432,17 @@
                     }));
                 }
 
+                // 加载示例数据
+                function loadExampleData() {
+                    setRecipes(EXAMPLE_DATA.recipes);
+                    setProducts(EXAMPLE_DATA.products);
+                    setPopulations(EXAMPLE_DATA.populations);
+                    if (EXAMPLE_DATA.positionsMemory) setPositionsMemory(EXAMPLE_DATA.positionsMemory);
+                    if (EXAMPLE_DATA.manualPositions) setManualPositions(EXAMPLE_DATA.manualPositions);
+                    if (typeof EXAMPLE_DATA.autoLayout === 'boolean') setAutoLayout(EXAMPLE_DATA.autoLayout);
+                    alert('示例数据加载成功！');
+                }
+
                 // 清空所有数据
                 function clearAllData() {
                     if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
@@ -1327,6 +1450,7 @@
                         setProducts([]);
                         setPopulations([]);
                         setPositionsMemory({});
+                        setManualPositions({});
                         setSelectedId(null);
                         localStorage.removeItem(STORAGE_KEY);
                         alert('所有数据已清空！');
@@ -1399,6 +1523,10 @@
                                         }
                                     })
                                 ),
+                                React.createElement("button", {
+                                    className: "cursor-pointer px-3 py-1.5 rounded-lg shadow bg-purple-600 text-white hover:bg-purple-700 text-sm font-medium transition-colors",
+                                    onClick: loadExampleData
+                                }, "载入示例"),
                                 React.createElement("button", {
                                     className: "cursor-pointer px-3 py-1.5 rounded-lg shadow bg-red-600 text-white hover:bg-red-700 text-sm font-medium transition-colors",
                                     onClick: clearAllData

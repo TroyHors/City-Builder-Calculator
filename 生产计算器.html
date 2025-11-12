@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产计算器</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/reactflow@11/dist/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .react-flow__node-default {
+            border-radius: 16px;
+        }
+        #root {
+            width: 100vw;
+            height: 100vh;
+        }
+        /* 优化连接点样式 */
+        .react-flow__handle {
+            width: 8px;
+            height: 8px;
+            background: #6366f1;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+        }
+        .react-flow__handle-left {
+            left: -4px;
+        }
+        .react-flow__handle-right {
+            right: -4px;
+        }
+        /* 连接点基础样式由自定义节点控制 */
+        /* 连接线样式优化 */
+        .react-flow__edge-path {
+            stroke-dasharray: none;
+            animation: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .react-flow__edge:hover .react-flow__edge-path {
+            stroke-width: 3px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        /* 多重连接线的层次效果 */
+        .react-flow__edge.edge-multiple {
+            opacity: 0.8;
+        }
+        .react-flow__edge.edge-multiple:hover {
+            opacity: 1;
+            z-index: 25;
+        }
+        .react-flow__edge.edge-single {
+            opacity: 0.9;
+            z-index: 15;
+        }
+        .react-flow__edge.edge-single:hover {
+            opacity: 1;
+            z-index: 25;
+        }
+        /* 连接线路径透明度，避免完全遮挡节点 */
+        .react-flow__edge-path {
+            opacity: 0.85;
+        }
+        .react-flow__edge:hover .react-flow__edge-path {
+            opacity: 1;
+        }
+        /* 连接线路径优化 */
+        .react-flow__edge-path {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+        }
+        /* 贝塞尔曲线连接线的特殊样式 */
+        .react-flow__edge[data-edge-type="bezier"] .react-flow__edge-path {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+        }
+        /* 连接线标签的背景优化 */
+        .react-flow__edge-textbg {
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+        }
+        /* 强制连接线在节点上方 */
+        .react-flow__edges {
+            z-index: 10 !important;
+        }
+        .react-flow__nodes {
+            z-index: 5 !important;
+        }
+        /* 连接线标签确保可见 */
+        .react-flow__edge-text {
+            pointer-events: none;
+            z-index: 15 !important;
+        }
+        /* 固定编辑面板样式 */
+        .fixed-edit-panel {
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+        }
+        .fixed-edit-panel:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        /* 连接线标签优化 */
+        .react-flow__edge-text {
+            font-size: 11px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+        /* 节点悬停效果 */
+        .react-flow__node:hover {
+            transform: scale(1.02);
+            transition: transform 0.2s ease;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+        }
+        /* 节点层级管理 - 连接线在节点上方 */
+        .react-flow__node {
+            z-index: 5;
+        }
+        .react-flow__edge {
+            z-index: 10;
+        }
+        .react-flow__edge:hover {
+            z-index: 20;
+        }
+        /* 确保连接线标签也在上方 */
+        .react-flow__edge-text {
+            z-index: 15;
+        }
+        .react-flow__edge-textbg {
+            z-index: 14;
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 18px;">
+            正在加载...
+        </div>
+    </div>
+
+    <script type="text/babel">
+        // 等待所有依赖加载完成
+        window.addEventListener('load', function() {
+            console.log('页面加载完成，开始初始化应用...');
+            
+            // 检查依赖是否加载成功
+            if (typeof React === 'undefined') {
+                console.error('React 未加载');
+                document.getElementById('root').innerHTML = '<div style="color: red; text-align: center; padding: 20px;">React 加载失败，请检查网络连接</div>';
+                return;
+            }
+            
+            if (typeof ReactDOM === 'undefined') {
+                console.error('ReactDOM 未加载');
+                document.getElementById('root').innerHTML = '<div style="color: red; text-align: center; padding: 20px;">ReactDOM 加载失败，请检查网络连接</div>';
+                return;
+            }
+            
+            if (typeof ReactFlow === 'undefined') {
+                console.error('ReactFlow 未加载');
+                document.getElementById('root').innerHTML = '<div style="color: red; text-align: center; padding: 20px;">ReactFlow 加载失败，请检查网络连接</div>';
+                return;
+            }
+            
+            console.log('ReactFlow 对象:', ReactFlow);
+            if (!ReactFlow.default && !ReactFlow.ReactFlow) {
+                console.error('ReactFlow 组件未找到');
+                document.getElementById('root').innerHTML = '<div style="color: red; text-align: center; padding: 20px;">ReactFlow 组件未找到，请检查版本兼容性</div>';
+                return;
+            }
+            
+            console.log('所有依赖加载成功，开始渲染应用...');
+            
+            const { useState, useMemo, useEffect } = React;
+            
+            // 动态连接点节点组件
+            function DynamicNode({ data, isConnectable }) {
+                const Handle = ReactFlow.Handle || ReactFlow.default?.Handle;
+                
+                if (!Handle) {
+                    return React.createElement("div", { 
+                        className: "p-3 rounded-2xl shadow bg-white border relative",
+                        style: { width: "280px", minHeight: "140px" }
+                    }, data.label);
+                }
+                
+                const { incomingCount = 0, outgoingCount = 0 } = data;
+                
+                // 动态计算连接点位置
+                function calculateHandlePositions(count, side) {
+                    if (count <= 0) return [];
+                    if (count === 1) return [{ id: `${side}-0`, position: 50 }]; // 居中
+                    
+                    const positions = [];
+                    const margin = 15; // 上下边距百分比
+                    const availableSpace = 100 - (margin * 2);
+                    const step = count > 1 ? availableSpace / (count - 1) : 0;
+                    
+                    for (let i = 0; i < count; i++) {
+                        positions.push({
+                            id: `${side}-${i}`,
+                            position: margin + (i * step)
+                        });
+                    }
+                    
+                    return positions;
+                }
+                
+                const leftHandles = calculateHandlePositions(incomingCount, 'left');
+                const rightHandles = calculateHandlePositions(outgoingCount, 'right');
+                
+                return React.createElement("div", { 
+                    className: "relative"
+                },
+                    // 节点内容
+                    React.createElement("div", {
+                        className: "p-3 rounded-2xl shadow bg-white border",
+                        style: { width: "280px", minHeight: "140px" }
+                    }, data.label),
+                    
+                    // 动态创建左侧连接点（输入）
+                    ...leftHandles.map((handle, index) => 
+                        React.createElement(Handle, {
+                            key: handle.id,
+                            type: "target",
+                            position: "left",
+                            id: handle.id,
+                            style: { 
+                                top: `${handle.position}%`,
+                                background: `hsl(${220 + index * 40}, 70%, 60%)`,
+                                border: '2px solid #ffffff',
+                                width: '8px',
+                                height: '8px'
+                            },
+                            isConnectable: isConnectable
+                        })
+                    ),
+                    
+                    // 动态创建右侧连接点（输出）
+                    ...rightHandles.map((handle, index) => 
+                        React.createElement(Handle, {
+                            key: handle.id,
+                            type: "source",
+                            position: "right",
+                            id: handle.id,
+                            style: { 
+                                top: `${handle.position}%`,
+                                background: `hsl(${120 + index * 40}, 70%, 60%)`,
+                                border: '2px solid #ffffff',
+                                width: '8px',
+                                height: '8px'
+                            },
+                            isConnectable: isConnectable
+                        })
+                    )
+                );
+            }
+            
+            // 本地存储管理
+            const STORAGE_KEY = 'production_calculator_data';
+
+            function saveToLocalStorage(data) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                    console.log('数据已保存到本地存储');
+                } catch (error) {
+                    console.error('保存到本地存储失败:', error);
+                }
+            }
+
+            function loadFromLocalStorage() {
+                try {
+                    const data = localStorage.getItem(STORAGE_KEY);
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        console.log('从本地存储加载数据');
+                        return parsed;
+                    }
+                } catch (error) {
+                    console.error('从本地存储加载失败:', error);
+                }
+                return null;
+            }
+
+            function downloadBlob(filename, blob) {
+                if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob) {
+                    navigator.msSaveOrOpenBlob(blob, filename);
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                a.style.display = "none";
+                a.rel = "noopener";
+                a.target = "_self";
+                document.body.appendChild(a);
+                try {
+                    a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+                } catch {
+                    a.click();
+                }
+                setTimeout(() => {
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                }, 1200);
+            }
+
+            function toCSV(rows, headers) {
+                const esc = v => `"${String(v ?? "").replaceAll("\"", "\"\"")}"`;
+                const lines = [headers.map(esc).join(",")];
+                for (const r of rows) lines.push(headers.map(h => esc(r[h])).join(","));
+                return lines.join("\n");
+            }
+
+            function parseCSVLine(line) {
+                const out = [];
+                let cur = "";
+                let inQ = false;
+                for (let i = 0; i < line.length; i++) {
+                    const ch = line[i];
+                    if (ch === '"') {
+                        if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+                        else { inQ = !inQ; }
+                    } else if (ch === ',' && !inQ) {
+                        out.push(cur); cur = "";
+                    } else {
+                        cur += ch;
+                    }
+                }
+                out.push(cur);
+                return out;
+            }
+
+            function uid() {
+                return Math.random().toString(36).slice(2, 9);
+            }
+
+            function ceil(x) {
+                return Math.ceil(x - 1e-12);
+            }
+
+            function computePlan(recipes, extraDemand) {
+                const byProduct = new Map();
+                for (const r of recipes) if (r.product) byProduct.set(r.product, r);
+                const visiting = new Set();
+                const visited = new Set();
+                const order = [];
+                function dfs(p) {
+                    if (visited.has(p)) return;
+                    if (visiting.has(p)) throw new Error("检测到循环依赖");
+                    visiting.add(p);
+                    const r = byProduct.get(p);
+                    if (r) for (const inp of r.inputs) if (inp.item && byProduct.has(inp.item)) dfs(inp.item);
+                    visiting.delete(p);
+                    visited.add(p);
+                    order.push(p);
+                }
+                const targetSet = new Set(recipes.filter(r => (r.desiredPerSec ?? 0) > 0 && r.product).map(r => r.product));
+                if (extraDemand) {
+                    for (const [k, v] of extraDemand.entries()) if (v > 0) targetSet.add(k);
+                }
+                for (const t of targetSet) dfs(t);
+                const requiredRate = new Map();
+                for (const r of recipes) {
+                    if (!r.product) continue;
+                    const d = r.desiredPerSec ?? 0;
+                    if (d > 0) requiredRate.set(r.product, (requiredRate.get(r.product) || 0) + d);
+                }
+                if (extraDemand) for (const [k, v] of extraDemand.entries()) requiredRate.set(k, (requiredRate.get(k) || 0) + v);
+                const proc = [...order].reverse();
+                for (const p of proc) {
+                    const r = byProduct.get(p);
+                    if (!r) continue;
+                    const Dp = requiredRate.get(p) || 0;
+                    if (Dp <= 0) continue;
+                    const outPerSec = r.timeSec > 0 ? r.outQty / r.timeSec : 0;
+                    if (outPerSec <= 0) continue;
+                    const cyclesPerSec = Dp / outPerSec;
+                    for (const inp of r.inputs) {
+                        if (!inp.item) continue;
+                        const needInpPerSec = cyclesPerSec * inp.qty;
+                        requiredRate.set(inp.item, (requiredRate.get(inp.item) || 0) + needInpPerSec);
+                    }
+                }
+                const factoriesNeeded = new Map();
+                const singleCapacity = new Map();
+                for (const r of recipes) {
+                    if (!r.product) continue;
+                    const need = requiredRate.get(r.product) || 0;
+                    const single = r.timeSec > 0 ? r.outQty / r.timeSec : 0;
+                    singleCapacity.set(r.product, single);
+                    const fac = need <= 0 || single <= 0 ? 0 : ceil(need / single);
+                    factoriesNeeded.set(r.product, fac);
+                }
+                return { requiredRate, factoriesNeeded, singleCapacity };
+            }
+
+            function buildGraph(recipes) {
+                const nodes = new Set();
+                const edges = [];
+                for (const r of recipes) {
+                    if (r.product) nodes.add(r.product);
+                    for (let i = 0; i < r.inputs.length; i++) {
+                        const inp = r.inputs[i];
+                        if (!inp.item) continue;
+                        nodes.add(inp.item);
+                        if (r.product) edges.push({ from: inp.item, to: r.product, key: `${inp.item}->${r.product}-${i}` });
+                    }
+                }
+                return { nodes: Array.from(nodes), edges };
+            }
+
+            function computeLevels(recipes) {
+                const { nodes, edges } = buildGraph(recipes);
+                const incoming = new Map(nodes.map(n => [n, 0]));
+                const outs = new Map(nodes.map(n => [n, []]));
+                for (const e of edges) {
+                    incoming.set(e.to, (incoming.get(e.to) || 0) + 1);
+                    outs.get(e.from).push(e.to);
+                }
+                const q = [];
+                for (const n of nodes) if ((incoming.get(n) || 0) === 0) q.push(n);
+                const level = new Map();
+                q.forEach(n => level.set(n, 0));
+                while (q.length) {
+                    const u = q.shift();
+                    const lu = level.get(u) || 0;
+                    for (const v of outs.get(u) || []) {
+                        incoming.set(v, (incoming.get(v) || 0) - 1);
+                        level.set(v, Math.max(level.get(v) || 0, lu + 1));
+                        if (incoming.get(v) === 0) q.push(v);
+                    }
+                }
+                for (const n of nodes) if (!level.has(n)) level.set(n, 0);
+                return level;
+            }
+
+            function autoLayoutPositions(recipes, positionsMemory, options = {}) {
+                const level = computeLevels(recipes);
+                const groups = new Map();
+                
+                // 按层级分组
+                for (const [p, lv] of level.entries()) {
+                    if (!groups.has(lv)) groups.set(lv, []);
+                    groups.get(lv).push(p);
+                }
+                
+                // 节点尺寸配置
+                const nodeWidth = 280;
+                const nodeHeight = 140;
+                const xGap = nodeWidth + 100;  // 合适的水平间距
+                const yGap = nodeHeight + 60;  // 合适的垂直间距
+                const marginX = options.marginX ?? 60;
+                const marginY = options.marginY ?? 80;
+                const pos = {};
+                
+                // 按层级从低到高排序（从上游到下游）
+                const levelsSorted = Array.from(groups.keys()).sort((a, b) => a - b);
+                
+                // 计算所有层级的最大节点数，用于整体居中
+                const maxNodesInLevel = Math.max(...Array.from(groups.values()).map(arr => arr.length));
+                
+                for (const lv of levelsSorted) {
+                    const arr = groups.get(lv);
+                    
+                    // 在同一层级内，按产品名称排序以保持一致性
+                    arr.sort((a, b) => a.localeCompare(b));
+                    
+                    // 动态计算垂直间距，避免重叠
+                    const currentLevelNodes = arr.length;
+                    const dynamicYGap = Math.max(yGap, nodeHeight + 20); // 确保最小间距
+                    
+                    // 计算该层级的垂直居中位置
+                    const levelHeight = currentLevelNodes * dynamicYGap;
+                    const totalHeight = maxNodesInLevel * dynamicYGap;
+                    const startY = marginY + Math.max(0, (totalHeight - levelHeight) / 2);
+                    
+                    arr.forEach((p, idx) => {
+                        // 使用层级作为X坐标（从左到右表示从上游到下游）
+                        // 使用索引作为Y坐标（从上到下排列同层级产品）
+                        pos[p] = { 
+                            x: marginX + lv * xGap, 
+                            y: startY + idx * dynamicYGap 
+                        };
+                    });
+                }
+                
+                return pos;
+            }
+
+
+
+            function App() {
+                const [recipes, setRecipes] = useState([]);
+                const [products, setProducts] = useState([]);
+                const [newProduct, setNewProduct] = useState("");
+                const [selectedId, setSelectedId] = useState(null);
+                const [positionsMemory, setPositionsMemory] = useState({});
+                const [autoLayout, setAutoLayout] = useState(true);
+                const [manualPositions, setManualPositions] = useState({}); // 记录手动位置
+                const [leftTab, setLeftTab] = useState("recipes");
+                const [populations, setPopulations] = useState([]);
+                const [showExportDropdown, setShowExportDropdown] = useState(false);
+                const [reactFlowInstance, setReactFlowInstance] = useState(null);
+
+                // 在组件加载时从本地存储恢复数据
+                useEffect(() => {
+                    const savedData = loadFromLocalStorage();
+                    if (savedData) {
+                        if (savedData.recipes) setRecipes(savedData.recipes);
+                        if (savedData.products) setProducts(savedData.products);
+                        if (savedData.populations) setPopulations(savedData.populations);
+                        if (savedData.positionsMemory) setPositionsMemory(savedData.positionsMemory);
+                        if (savedData.manualPositions) setManualPositions(savedData.manualPositions);
+                        if (typeof savedData.autoLayout === 'boolean') setAutoLayout(savedData.autoLayout);
+                        console.log('已从本地存储恢复数据');
+                    }
+                }, []);
+
+                // 当数据变化时自动保存到本地存储
+                useEffect(() => {
+                    const dataToSave = {
+                        recipes,
+                        products,
+                        populations,
+                        positionsMemory,
+                        manualPositions,
+                        autoLayout,
+                        lastSaved: new Date().toISOString()
+                    };
+                    saveToLocalStorage(dataToSave);
+                }, [recipes, products, populations, positionsMemory, manualPositions, autoLayout]);
+
+                // 点击外部关闭下拉菜单
+                // useEffect(() => {
+                //     function handleClickOutside(event) {
+                //         if (showExportDropdown) {
+                //             setShowExportDropdown(false);
+                //         }
+                //     }
+                //     document.addEventListener('mousedown', handleClickOutside);
+                //     return () => {
+                //         document.removeEventListener('mousedown', handleClickOutside);
+                //     };
+                // }, [showExportDropdown]);
+
+                // 导出JSON功能
+                function exportJSON() {
+                    const dataToExport = {
+                        recipes,
+                        products,
+                        populations,
+                        positionsMemory,
+                        manualPositions,
+                        autoLayout,
+                        exportTime: new Date().toISOString(),
+                        version: "1.1"
+                    };
+                    const jsonStr = JSON.stringify(dataToExport, null, 2);
+                    const blob = new Blob([jsonStr], { type: 'application/json' });
+                    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                    downloadBlob(`生产依赖计算器_${timestamp}.json`, blob);
+                }
+
+                // 导出Excel功能
+                async function exportExcel() {
+                    const recipesData = recipes.map(r => ({
+                        product: r.product || "",
+                        timeSec: r.timeSec || 0,
+                        outQty: r.outQty || 0,
+                        desiredPerSec: r.desiredPerSec || 0,
+                        inputs: r.inputs.map(inp => `${inp.item}:${inp.qty}`).join(";"),
+                        staff: (r.staff || []).map(st => `${st.pop}:${st.cnt}`).join(";"),
+                        note: r.note || ""
+                    }));
+                    
+                    const populationsData = populations.map(p => ({
+                        name: p.name || "",
+                        ideal: p.ideal || 0,
+                        inputs: (p.inputs || []).map(inp => `${inp.item}:${inp.rate}`).join(";")
+                    }));
+                    
+                    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                    const filename = `生产依赖数据_${timestamp}.xlsx`;
+                    
+                    try {
+                        const XLSX = await ensureXLSX();
+                        const wb = XLSX.utils.book_new();
+                        
+                        // 添加配方工作表
+                        if (recipesData.length > 0) {
+                            const ws = XLSX.utils.json_to_sheet(recipesData, { 
+                                header: ["product", "timeSec", "outQty", "desiredPerSec", "inputs", "staff", "note"] 
+                            });
+                            XLSX.utils.book_append_sheet(wb, ws, "recipes");
+                        }
+                        
+                        // 添加人口工作表
+                        if (populationsData.length > 0) {
+                            const ws2 = XLSX.utils.json_to_sheet(populationsData, {
+                                header: ["name", "ideal", "inputs"]
+                            });
+                            XLSX.utils.book_append_sheet(wb, ws2, "populations");
+                        }
+                        
+                        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                        downloadBlob(filename, new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+                    } catch (e) {
+                        // 降级到CSV
+                        const csv1 = toCSV(recipesData, ["product", "timeSec", "outQty", "desiredPerSec", "inputs", "staff", "note"]);
+                        downloadBlob(filename.replace('.xlsx', '_recipes.csv'), new Blob([csv1], { type: "text/csv;charset=utf-8;" }));
+                    }
+                }
+
+                // 导入JSON功能
+                function importJSON(file) {
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.recipes) setRecipes(data.recipes);
+                            if (data.products) setProducts(data.products);
+                            if (data.populations) setPopulations(data.populations);
+                            if (data.positionsMemory) setPositionsMemory(data.positionsMemory);
+                            if (data.manualPositions) setManualPositions(data.manualPositions);
+                            if (typeof data.autoLayout === 'boolean') setAutoLayout(data.autoLayout);
+                            alert('JSON数据导入成功！');
+                        } catch (error) {
+                            alert('JSON文件格式错误，导入失败！');
+                            console.error('导入JSON失败:', error);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+
+                // 通用导入函数
+                function handleImportFile(file) {
+                    if (!file) return;
+                    const name = (file.name || "").toLowerCase();
+                    
+                    if (name.endsWith(".json")) {
+                        importJSON(file);
+                    } else if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) {
+                        handleUploadExcel(file);
+                    } else {
+                        alert("不支持的文件格式！请选择 JSON、Excel 或 CSV 文件。");
+                    }
+                }
+
+                // Excel相关功能
+                async function ensureXLSX() {
+                    if (window.XLSX) return window.XLSX;
+                    const loader = new Promise((resolve, reject) => {
+                        const s = document.createElement("script");
+                        s.src = "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js";
+                        s.onload = resolve;
+                        s.onerror = reject;
+                        document.head.appendChild(s);
+                    });
+                    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000));
+                    await Promise.race([loader, timeout]);
+                    return window.XLSX;
+                }
+
+                async function downloadExcelTemplate() {
+                    const rows = [
+                        { product: "木头", timeSec: 1, outQty: 1, desiredPerSec: 0, inputs: "", staff: "", note: "伐木场：1s 产 1 木头" },
+                        { product: "木材", timeSec: 2, outQty: 1, desiredPerSec: 0, inputs: "木头:1", staff: "工人:2", note: "木材厂：2s 消耗 1 木头 产 1 木材" },
+                        { product: "木炭", timeSec: 2, outQty: 2, desiredPerSec: 1, inputs: "木头:2;木材:1", staff: "工人:3", note: "木碳厂：2s 消耗 2 木头 + 1 木材 产 2 木炭；期望 1/秒" },
+                    ];
+                    try {
+                        const XLSX = await ensureXLSX();
+                        const ws = XLSX.utils.json_to_sheet(rows, { header: ["product", "timeSec", "outQty", "desiredPerSec", "inputs", "staff", "note"] });
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "recipes");
+                        const ws2 = XLSX.utils.aoa_to_sheet([["name", "ideal", "inputs"], ["工人", 5, "木炭:0.02"]]);
+                        XLSX.utils.book_append_sheet(wb, ws2, "populations");
+                        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                        downloadBlob("recipes_template.xlsx", new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+                    } catch (e) {
+                        const csv1 = toCSV(rows, ["product", "timeSec", "outQty", "desiredPerSec", "inputs", "staff", "note"]);
+                        downloadBlob("recipes_template.csv", new Blob([csv1], { type: "text/csv;charset=utf-8;" }));
+                    }
+                }
+
+                async function handleUploadExcel(file) {
+                    if (!file) return;
+                    const name = (file.name || "").toLowerCase();
+                    if (name.endsWith(".csv")) {
+                        const text = await file.text();
+                        const rows = text.split(/\r?\n/).filter(Boolean);
+                        if (rows.length === 0) return;
+                        const header = parseCSVLine(rows[0]).map(s => s.replace(/^\"|\"$/g, "").trim());
+                        const idx = k => header.indexOf(k);
+                        const parsed = [];
+                        const names = new Set();
+                        for (let i = 1; i < rows.length; i++) {
+                            const parts = parseCSVLine(rows[i]);
+                            const val = k => (parts[idx(k)] ?? "").replace(/^\"|\"$/g, "").trim();
+                            const product = val("product");
+                            if (!product) continue;
+                            const timeSec = parseFloat(val("timeSec")) || 0;
+                            const outQty = parseFloat(val("outQty")) || 0;
+                            const desiredPerSec = parseFloat(val("desiredPerSec")) || 0;
+                            const inputs = [];
+                            const raw = val("inputs");
+                            if (raw) raw.split(";").forEach(tok => {
+                                const t = tok.trim();
+                                if (!t) return;
+                                const [item, qtyStr] = t.split(":").map(s => s.trim());
+                                if (!item) return;
+                                inputs.push({ item, qty: parseFloat(qtyStr) || 0 });
+                            });
+                            const staff = [];
+                            const staffRaw = val("staff");
+                            if (staffRaw) staffRaw.split(";").forEach(tok => {
+                                const t = tok.trim(); if (!t) return;
+                                const [pop, cnt] = t.split(":").map(s => s.trim()); if (!pop) return;
+                                staff.push({ pop, cnt: parseFloat(cnt) || 0 });
+                            });
+                            parsed.push({ id: uid(), product, timeSec, outQty, desiredPerSec, inputs, staff, note: val("note") || "" });
+                            names.add(product);
+                            inputs.forEach(i => i.item && names.add(i.item));
+                        }
+                        setProducts(Array.from(names));
+                        setRecipes(parsed);
+                        alert('CSV数据导入成功！');
+                        return;
+                    }
+                    try {
+                        const XLSX = await ensureXLSX();
+                        const data = await file.arrayBuffer();
+                        const wb = XLSX.read(data, { type: "array" });
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+                        const parsed = [];
+                        const names = new Set();
+                        for (const r of rows) {
+                            const product = String(r.product || "").trim();
+                            if (!product) continue;
+                            const timeSec = parseFloat(r.timeSec) || 0;
+                            const outQty = parseFloat(r.outQty) || 0;
+                            const desiredPerSec = parseFloat(r.desiredPerSec) || 0;
+                            const inputsRaw = String(r.inputs || "");
+                            const inputs = [];
+                            if (inputsRaw) {
+                                inputsRaw.split(";").forEach(tok => {
+                                    const t = tok.trim();
+                                    if (!t) return;
+                                    const [item, qtyStr] = t.split(":").map(s => s.trim());
+                                    if (!item) return;
+                                    const qty = parseFloat(qtyStr) || 0;
+                                    inputs.push({ item, qty });
+                                });
+                            }
+                            const staff = [];
+                            const staffRaw = String(r.staff || "");
+                            if (staffRaw) staffRaw.split(";").forEach(tok => {
+                                const t = tok.trim(); if (!t) return;
+                                const [pop, cnt] = t.split(":").map(s => s.trim()); if (!pop) return;
+                                staff.push({ pop, cnt: parseFloat(cnt) || 0 });
+                            });
+                            parsed.push({ id: uid(), product, timeSec, outQty, desiredPerSec, inputs, staff, note: String(r.note || "") });
+                            names.add(product);
+                            inputs.forEach(i => i.item && names.add(i.item));
+                        }
+                        setProducts(Array.from(names));
+                        setRecipes(parsed);
+                        const popSheet = wb.Sheets["populations"]; 
+                        if (popSheet) {
+                            const rows2 = XLSX.utils.sheet_to_json(popSheet, { defval: "" });
+                            const pops = [];
+                            for (const r of rows2) {
+                                const name = String(r.name || "").trim(); if (!name) continue;
+                                const ideal = parseFloat(r.ideal) || 0;
+                                const inputs = [];
+                                const raw = String(r.inputs || "");
+                                if (raw) raw.split(";").forEach(tok => {
+                                    const t = tok.trim(); if (!t) return;
+                                    const [item, rate] = t.split(":").map(s => s.trim()); if (!item) return;
+                                    inputs.push({ item, rate: parseFloat(rate) || 0 });
+                                });
+                                pops.push({ id: uid(), name, ideal, inputs });
+                            }
+                            setPopulations(pops);
+                        }
+                        alert('Excel数据导入成功！');
+                    } catch (e) {
+                        alert("Excel文件解析失败");
+                    }
+                }
+
+                function computeWithPopulation() {
+                    const staffNeed = new Map();
+                    let extra = new Map();
+                    let lastFactories = new Map();
+                    for (let iter = 0; iter < 6; iter++) {
+                        const plan = computePlan(recipes, extra);
+                        const curFactories = plan.factoriesNeeded;
+                        staffNeed.clear();
+                        for (const r of recipes) {
+                            const fac = curFactories.get(r.product) || 0;
+                            if (r.staff) for (const s of r.staff) {
+                                if (!s.pop) continue;
+                                const need = fac * (s.cnt || 0);
+                                staffNeed.set(s.pop, (staffNeed.get(s.pop) || 0) + need);
+                            }
+                        }
+                        const popDemand = new Map();
+                        for (const pop of populations) {
+                            const required = staffNeed.get(pop.name) || 0;
+                            const effective = Math.max(pop.ideal || 0, required);
+                            if (pop.inputs) for (const inp of pop.inputs) {
+                                if (!inp.item) continue;
+                                const rate = effective * (inp.rate || 0);
+                                popDemand.set(inp.item, (popDemand.get(inp.item) || 0) + rate);
+                            }
+                        }
+                        const changed = JSON.stringify([...extra.entries()].sort()) !== JSON.stringify([...popDemand.entries()].sort())
+                            || JSON.stringify([...lastFactories.entries()].sort()) !== JSON.stringify([...curFactories.entries()].sort());
+                        extra = popDemand;
+                        lastFactories = new Map(curFactories);
+                        if (!changed) return { plan, staffNeed, extraDemand: extra };
+                    }
+                    const plan = computePlan(recipes, extra);
+                    return { plan, staffNeed, extraDemand: extra };
+                }
+
+                const popCalc = useMemo(() => computeWithPopulation(), [recipes, populations]);
+                const plan = popCalc.plan;
+                const extraDemand = popCalc.extraDemand;
+                const staffNeed = popCalc.staffNeed;
+
+                const productOptions = products;
+
+                // 智能连接分析，优化交叉最少的连接方案
+                function analyzeConnections(recipes) {
+                    const nodeConnections = new Map();
+                    const edgeList = [];
+                    const handleAssignments = new Map();
+                    
+                    // 初始化所有节点
+                    const allNodes = new Set();
+                    for (const r of recipes) {
+                        if (r.product) allNodes.add(r.product);
+                        for (const inp of r.inputs) {
+                            if (inp.item) allNodes.add(inp.item);
+                        }
+                    }
+                    
+                    for (const nodeId of allNodes) {
+                        nodeConnections.set(nodeId, { incoming: [], outgoing: [] });
+                    }
+                    
+                    // 收集连接信息
+                    for (const r of recipes) {
+                        if (!r.product) continue;
+                        
+                        for (let i = 0; i < r.inputs.length; i++) {
+                            const inp = r.inputs[i];
+                            if (!inp.item) continue;
+                            
+                            const edgeInfo = {
+                                id: `${inp.item}->${r.product}-${i}`,
+                                source: inp.item,
+                                target: r.product,
+                                quantity: inp.qty,
+                                inputIndex: i
+                            };
+                            
+                            nodeConnections.get(inp.item).outgoing.push(edgeInfo);
+                            nodeConnections.get(r.product).incoming.push(edgeInfo);
+                            edgeList.push(edgeInfo);
+                        }
+                    }
+                    
+                    // 动态优化连接点分配算法
+                    function assignOptimalHandles(nodePositions) {
+                        const handleAssignments = new Map();
+                        
+                        // 计算每个节点的连接点位置
+                        function getHandlePosition(nodeId, handleIndex, isSource, totalHandles) {
+                            const nodePos = nodePositions[nodeId] || { x: 0, y: 0 };
+                            
+                            // 安全检查
+                            if (totalHandles <= 0) {
+                                console.warn(`节点 ${nodeId} 的连接点数量为0`);
+                                return { x: nodePos.x + (isSource ? 140 : -140), y: nodePos.y };
+                            }
+                            
+                            if (totalHandles === 1) {
+                                return { x: nodePos.x + (isSource ? 140 : -140), y: nodePos.y };
+                            }
+                            
+                            const margin = 15; // 边距百分比
+                            const availableSpace = 100 - (margin * 2);
+                            const step = totalHandles > 1 ? availableSpace / (totalHandles - 1) : 0;
+                            const yPercent = margin + (handleIndex * step);
+                            const yOffset = (yPercent - 50) * 140 / 100; // 转换为实际像素偏移
+                            
+                            return {
+                                x: nodePos.x + (isSource ? 140 : -140),
+                                y: nodePos.y + yOffset
+                            };
+                        }
+                        
+                        // 计算两点间的绝对距离
+                        function calculateDistance(pos1, pos2) {
+                            return Math.sqrt(Math.pow(pos2.x - pos1.x, 2) + Math.pow(pos2.y - pos1.y, 2));
+                        }
+                        
+                        // 初始分配：每个节点的连接点使用情况
+                        const nodeHandleUsage = new Map();
+                        for (const nodeId of allNodes) {
+                            const nodeConn = nodeConnections.get(nodeId);
+                            if (!nodeConn) {
+                                console.warn(`节点连接信息未找到: ${nodeId}`);
+                                continue;
+                            }
+                            const outgoingCount = nodeConn.outgoing ? nodeConn.outgoing.length : 0;
+                            const incomingCount = nodeConn.incoming ? nodeConn.incoming.length : 0;
+                            nodeHandleUsage.set(nodeId, {
+                                outgoing: new Array(Math.max(0, outgoingCount)).fill(null),
+                                incoming: new Array(Math.max(0, incomingCount)).fill(null)
+                            });
+                        }
+                        
+                        // 贪心算法：每次选择全局最短的连接
+                        const unassignedEdges = [...edgeList];
+                        
+                        while (unassignedEdges.length > 0) {
+                            let bestEdge = null;
+                            let bestSourceHandle = -1;
+                            let bestTargetHandle = -1;
+                            let bestDistance = Infinity;
+                            
+                            // 遍历所有未分配的连接
+                            for (const edge of unassignedEdges) {
+                                const sourceUsage = nodeHandleUsage.get(edge.source);
+                                const targetUsage = nodeHandleUsage.get(edge.target);
+                                
+                                if (!sourceUsage || !targetUsage) {
+                                    console.warn(`连接点使用信息未找到: ${edge.source} -> ${edge.target}`);
+                                    continue;
+                                }
+                                
+                                // 安全检查：确保数组存在且有长度
+                                if (!sourceUsage.outgoing || !targetUsage.incoming || 
+                                    sourceUsage.outgoing.length === 0 || targetUsage.incoming.length === 0) {
+                                    console.warn(`连接点数组为空: ${edge.source}(${sourceUsage.outgoing?.length || 0}) -> ${edge.target}(${targetUsage.incoming?.length || 0})`);
+                                    continue;
+                                }
+                                
+                                // 尝试所有可能的连接点组合
+                                for (let si = 0; si < sourceUsage.outgoing.length; si++) {
+                                    if (sourceUsage.outgoing[si] !== null) continue; // 已被占用
+                                    
+                                    for (let ti = 0; ti < targetUsage.incoming.length; ti++) {
+                                        if (targetUsage.incoming[ti] !== null) continue; // 已被占用
+                                        
+                                        try {
+                                            // 计算这个组合的连接距离
+                                            const sourceHandlePos = getHandlePosition(edge.source, si, true, sourceUsage.outgoing.length);
+                                            const targetHandlePos = getHandlePosition(edge.target, ti, false, targetUsage.incoming.length);
+                                            
+                                            if (!sourceHandlePos || !targetHandlePos) continue;
+                                            
+                                            const distance = calculateDistance(sourceHandlePos, targetHandlePos);
+                                            
+                                            // 检查是否是当前最优解
+                                            if (distance < bestDistance) {
+                                                bestEdge = edge;
+                                                bestSourceHandle = si;
+                                                bestTargetHandle = ti;
+                                                bestDistance = distance;
+                                            }
+                                        } catch (error) {
+                                            console.warn(`计算连接点位置时出错: ${edge.source} -> ${edge.target}`, error);
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // 分配最优连接
+                            if (bestEdge && bestSourceHandle >= 0 && bestTargetHandle >= 0) {
+                                try {
+                                    const sourceConn = nodeConnections.get(bestEdge.source);
+                                    const targetConn = nodeConnections.get(bestEdge.target);
+                                    
+                                    if (!sourceConn || !targetConn) {
+                                        console.warn(`节点连接信息缺失: ${bestEdge.source} -> ${bestEdge.target}`);
+                                        break;
+                                    }
+                                    
+                                    handleAssignments.set(bestEdge.id, {
+                                        sourceHandle: `right-${bestSourceHandle}`,
+                                        targetHandle: `left-${bestTargetHandle}`,
+                                        sourceIndex: bestSourceHandle,
+                                        targetIndex: bestTargetHandle,
+                                        sourceTotal: sourceConn.outgoing ? sourceConn.outgoing.length : 0,
+                                        targetTotal: targetConn.incoming ? targetConn.incoming.length : 0,
+                                        distance: bestDistance
+                                    });
+                                    
+                                    // 标记连接点为已使用
+                                    const sourceUsage = nodeHandleUsage.get(bestEdge.source);
+                                    const targetUsage = nodeHandleUsage.get(bestEdge.target);
+                                    if (sourceUsage && targetUsage) {
+                                        sourceUsage.outgoing[bestSourceHandle] = bestEdge.id;
+                                        targetUsage.incoming[bestTargetHandle] = bestEdge.id;
+                                    }
+                                    
+                                    // 从未分配列表中移除
+                                    const index = unassignedEdges.findIndex(e => e.id === bestEdge.id);
+                                    if (index >= 0) {
+                                        unassignedEdges.splice(index, 1);
+                                    }
+                                } catch (error) {
+                                    console.error(`分配连接点时出错:`, error);
+                                    break;
+                                }
+                            } else {
+                                // 如果找不到可用的连接点组合，强制分配剩余连接
+                                console.warn('无法找到最优连接点，跳过剩余连接');
+                                break;
+                            }
+                        }
+                        
+                        return handleAssignments;
+                    }
+                    
+                    return { nodeConnections, edgeList, assignOptimalHandles };
+                }
+
+                // 计算连接线的垂直偏移，避免重合
+                function calculateEdgeOffset(edgeIndex, totalEdges, sourceY, targetY) {
+                    if (totalEdges <= 1) return 0;
+                    
+                    // 计算基础偏移量
+                    const yDistance = Math.abs(targetY - sourceY);
+                    const baseOffset = Math.min(30, yDistance * 0.1); // 根据节点距离调整偏移
+                    
+                    // 分散连接线：奇数向上，偶数向下
+                    if (edgeIndex === 0) return 0; // 第一条线保持中心
+                    
+                    const direction = edgeIndex % 2 === 1 ? -1 : 1;
+                    const magnitude = Math.ceil(edgeIndex / 2);
+                    
+                    return direction * baseOffset * magnitude;
+                }
+
+                const { nodes, edges } = useMemo(() => {
+                    try {
+                        const nodes = [];
+                        const edges = [];
+                        const { nodeConnections, edgeList, assignOptimalHandles } = analyzeConnections(recipes);
+                    
+                    const ensureNode = (product) => {
+                        if (!product) return;
+                        if (nodes.find(n => n.id === product)) return;
+                        const r = recipes.find(x => x.product === product);
+                        const need = plan?.requiredRate?.get(product) ?? 0;
+                        const fac = plan?.factoriesNeeded?.get(product) ?? 0;
+                        
+                        // 获取该节点的连接数量
+                        const connections = nodeConnections.get(product) || { incoming: [], outgoing: [] };
+                        
+                        nodes.push({
+                            id: product,
+                            position: { x: 0, y: 0 },
+                            data: {
+                                label: React.createElement("div", { className: "p-3 rounded-2xl shadow bg-white border", style: { width: "100%" } },
+                                    React.createElement("div", { className: "text-lg font-semibold" }, product),
+                                    r && React.createElement("div", { className: "text-xs mt-1 text-gray-600" }, `循环 ${r.timeSec}s 产 ${r.outQty}/循环`),
+                                    React.createElement("div", { className: "text-sm mt-2" }, `需求速率：${(need || 0).toFixed(2)}/秒`),
+                                    React.createElement("div", { className: "text-sm" }, `工厂数量：${fac}`),
+                                    r?.note && React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, r.note)
+                                ),
+                                // 传递连接数量给动态节点组件
+                                incomingCount: connections.incoming.length,
+                                outgoingCount: connections.outgoing.length
+                            },
+                            draggable: true,
+                            style: { 
+                                width: 280, 
+                                height: 'auto',
+                                minHeight: 140,
+                                boxSizing: "border-box"
+                            },
+                            type: "dynamic",  // 使用动态节点类型
+                        });
+                    };
+                    // 首先创建所有节点
+                    for (const r of recipes) {
+                        ensureNode(r.product);
+                        for (const inp of r.inputs) {
+                            if (inp.item) ensureNode(inp.item);
+                        }
+                    }
+
+                    // 先设置节点位置
+                    let pos;
+                    if (autoLayout) {
+                        pos = autoLayoutPositions(recipes, {});
+                    } else {
+                        pos = Object.keys(manualPositions).length > 0 ? manualPositions : positionsMemory;
+                    }
+                    nodes.forEach(n => { 
+                        if (pos[n.id]) {
+                            n.position = { ...pos[n.id] };
+                            if (!Number.isFinite(n.position.x)) n.position.x = 0;
+                            if (!Number.isFinite(n.position.y)) n.position.y = 0;
+                        }
+                    });
+
+                    // 使用节点位置进行智能连接点分配
+                    const nodePositions = {};
+                    nodes.forEach(n => {
+                        if (pos[n.id]) {
+                            nodePositions[n.id] = pos[n.id];
+                        }
+                    });
+                    
+                    // 执行动态优化连接点分配
+                    const handleAssignments = assignOptimalHandles(nodePositions);
+                    
+                    // 创建边，使用优化后的连接点分配
+                    edgeList.forEach((edgeInfo) => {
+                        const assignment = handleAssignments.get(edgeInfo.id);
+                        
+                        if (!assignment) {
+                            console.warn(`未找到连接点分配: ${edgeInfo.id}`);
+                            return;
+                        }
+                        
+                        const { sourceHandle, targetHandle, sourceIndex, targetIndex } = assignment;
+                        
+                        // 选择颜色和样式
+                        const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+                        const edgeColor = colors[sourceIndex % colors.length];
+                        const strokeWidth = 2 + (sourceIndex * 0.2);
+                        const dashArray = sourceIndex > 0 ? 
+                            `${5 + sourceIndex * 2},${3 + sourceIndex}` : 'none';
+                        
+                        edges.push({ 
+                            id: edgeInfo.id, 
+                            source: edgeInfo.source, 
+                            target: edgeInfo.target, 
+                            label: `${edgeInfo.quantity}/循环`,
+                            type: 'smoothstep',
+                            sourceHandle: sourceHandle,
+                            targetHandle: targetHandle,
+                            style: {
+                                strokeWidth: strokeWidth,
+                                stroke: edgeColor,
+                                strokeDasharray: dashArray
+                            },
+                            zIndex: 10 + sourceIndex,  // 确保连接线在节点上方
+                            labelStyle: {
+                                fontSize: 11,
+                                fontWeight: 500,
+                                fill: edgeColor
+                            },
+                            labelBgStyle: {
+                                fill: '#ffffff',
+                                fillOpacity: 0.9,
+                                stroke: edgeColor,
+                                strokeWidth: 0.5
+                            },
+                            data: {
+                                sourceIndex: sourceIndex,
+                                targetIndex: targetIndex,
+                                distance: assignment.distance || 0
+                            },
+                            className: `edge-${assignment.sourceTotal > 1 || assignment.targetTotal > 1 ? 'multiple' : 'single'}`
+                        });
+                    });
+                    
+                    // 调试信息：检查节点连接数量和连接点分配
+                    if (nodes.length > 0) {
+                        console.log('节点连接数量:', nodes.map(n => ({ 
+                            id: n.id, 
+                            incoming: n.data.incomingCount,
+                            outgoing: n.data.outgoingCount,
+                            position: n.position
+                        })));
+                        
+                        console.log('连接点分配详情:', edges.map(e => ({
+                            id: e.id,
+                            source: `${e.source}(${e.sourceHandle})`,
+                            target: `${e.target}(${e.targetHandle})`,
+                            color: e.style?.stroke,
+                            distance: e.data?.distance?.toFixed(1) || 'N/A'
+                        })));
+                        
+                        // 验证连接点是否有重复使用
+                        const handleUsage = new Map();
+                        edges.forEach(e => {
+                            const sourceKey = `${e.source}-${e.sourceHandle}`;
+                            const targetKey = `${e.target}-${e.targetHandle}`;
+                            handleUsage.set(sourceKey, (handleUsage.get(sourceKey) || 0) + 1);
+                            handleUsage.set(targetKey, (handleUsage.get(targetKey) || 0) + 1);
+                        });
+                        
+                        const duplicates = [...handleUsage.entries()].filter(([key, count]) => count > 1);
+                        if (duplicates.length > 0) {
+                            console.warn('发现重复使用的连接点:', duplicates);
+                        } else {
+                            console.log('✅ 所有连接点都是唯一使用');
+                        }
+                    }
+                    
+                        return { nodes, edges };
+                    } catch (error) {
+                        console.error('节点和边创建时出错:', error);
+                        return { 
+                            nodes: [], 
+                            edges: []
+                        };
+                    }
+                }, [recipes, plan, positionsMemory, manualPositions, autoLayout]);
+
+                function addRecipe() {
+                    const id = uid();
+                    setRecipes(r => [...r, { id, product: "", timeSec: 1, outQty: 1, desiredPerSec: 0, inputs: [], staff: [], note: "" }]);
+                    setSelectedId(id);
+                }
+                function updateRecipe(id, patch) {
+                    setRecipes(rs => rs.map(r => (r.id === id ? { ...r, ...patch } : r)));
+                }
+                function removeRecipe(id) {
+                    setRecipes(rs => rs.filter(r => r.id !== id));
+                    if (selectedId === id) setSelectedId(null);
+                }
+                function addInput(id) {
+                    setRecipes(rs => rs.map(r => {
+                        if (r.id !== id) return r;
+                        const first = products[0] || "";
+                        return { ...r, inputs: [...r.inputs, { item: first, qty: 1 }] };
+                    }));
+                }
+                function updateInput(id, idx, patch) {
+                    setRecipes(rs => rs.map(r => {
+                        if (r.id !== id) return r;
+                        const inputs = r.inputs.slice();
+                        inputs[idx] = { ...inputs[idx], ...patch };
+                        return { ...r, inputs };
+                    }));
+                }
+                function removeInput(id, idx) {
+                    setRecipes(rs => rs.map(r => {
+                        if (r.id !== id) return r;
+                        const inputs = r.inputs.slice();
+                        inputs.splice(idx, 1);
+                        return { ...r, inputs };
+                    }));
+                }
+                function addStaff(id) {
+                    setRecipes(rs => rs.map(r => {
+                        if (r.id !== id) return r;
+                        const first = populations[0]?.name || "";
+                        return { ...r, staff: [...(r.staff || []), { pop: first, cnt: 1 }] };
+                    }));
+                }
+                function updateStaff(id, idx, patch) {
+                    setRecipes(rs => rs.map(r => {
+                        if (r.id !== id) return r;
+                        const staff = (r.staff || []).slice();
+                        staff[idx] = { ...staff[idx], ...patch };
+                        return { ...r, staff };
+                    }));
+                }
+                function removeStaff(id, idx) {
+                    setRecipes(rs => rs.map(r => {
+                        if (r.id !== id) return r;
+                        const staff = (r.staff || []).slice();
+                        staff.splice(idx, 1);
+                        return { ...r, staff };
+                    }));
+                }
+
+                function addPopulation() {
+                    setPopulations(ps => [...ps, { id: uid(), name: "", ideal: 0, inputs: [] }]);
+                }
+                function updatePopulation(id, patch) {
+                    setPopulations(ps => ps.map(p => p.id === id ? { ...p, ...patch } : p));
+                }
+                function removePopulation(id) {
+                    setPopulations(ps => ps.filter(p => p.id !== id));
+                }
+                function addPopInput(id) {
+                    setPopulations(ps => ps.map(p => {
+                        if (p.id !== id) return p;
+                        const first = products[0] || "";
+                        return { ...p, inputs: [...p.inputs, { item: first, rate: 0 }] };
+                    }));
+                }
+                function updatePopInput(id, idx, patch) {
+                    setPopulations(ps => ps.map(p => {
+                        if (p.id !== id) return p;
+                        const ins = p.inputs.slice(); ins[idx] = { ...ins[idx], ...patch };
+                        return { ...p, inputs: ins };
+                    }));
+                }
+                function removePopInput(id, idx) {
+                    setPopulations(ps => ps.map(p => {
+                        if (p.id !== id) return p;
+                        const ins = p.inputs.slice(); ins.splice(idx, 1);
+                        return { ...p, inputs: ins };
+                    }));
+                }
+
+                // 清空所有数据
+                function clearAllData() {
+                    if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+                        setRecipes([]);
+                        setProducts([]);
+                        setPopulations([]);
+                        setPositionsMemory({});
+                        setSelectedId(null);
+                        localStorage.removeItem(STORAGE_KEY);
+                        alert('所有数据已清空！');
+                    }
+                }
+
+                return React.createElement("div", { className: "w-full h-full grid grid-cols-12 gap-4 p-4 bg-gray-50" },
+                    React.createElement("div", { className: "col-span-4 flex flex-col gap-4" },
+                        React.createElement("div", { className: "flex items-center justify-between" },
+                            React.createElement("div", { className: "text-xl font-bold" }, "生产依赖配置"),
+                            React.createElement("div", { className: "flex gap-3" },
+                                // 导出按钮（带下拉菜单）
+                                React.createElement("div", { className: "relative" },
+                                    React.createElement("button", {
+                                        className: "px-4 py-1.5 rounded-lg shadow bg-green-600 text-white hover:bg-green-700 flex items-center justify-between text-sm font-medium transition-colors min-w-24",
+                                        onClick: (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setShowExportDropdown(!showExportDropdown);
+                                        }
+                                    },
+                                        React.createElement("span", null, "导出数据"),
+                                        React.createElement("span", { className: "ml-2" }, showExportDropdown ? "▲" : "▼")
+                                    ),
+                                    showExportDropdown && React.createElement("div", {
+                                        className: "absolute top-full left-0 right-0 mt-1 bg-white border rounded-xl shadow-lg z-10",
+                                        onClick: (e) => e.stopPropagation()
+                                    },
+                                        React.createElement("button", {
+                                            className: "w-full px-4 py-2 text-left hover:bg-gray-50 rounded-t-xl border-b text-gray-800",
+                                            onClick: (e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                exportJSON();
+                                                setShowExportDropdown(false);
+                                            }
+                                        }, "导出为 JSON"),
+                                        React.createElement("button", {
+                                            className: "w-full px-4 py-2 text-left hover:bg-gray-50 text-gray-800",
+                                            onClick: (e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                exportExcel();
+                                                setShowExportDropdown(false);
+                                            }
+                                        }, "导出为 Excel"),
+                                        React.createElement("button", {
+                                            className: "w-full px-4 py-2 text-left hover:bg-gray-50 rounded-b-xl text-gray-800",
+                                            onClick: (e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                downloadExcelTemplate();
+                                                setShowExportDropdown(false);
+                                            }
+                                        }, "下载 Excel 模板")
+                                    )
+                                ),
+                                // 导入按钮
+                                React.createElement("label", {
+                                    className: "cursor-pointer px-3 py-1.5 rounded-lg shadow bg-blue-600 text-white hover:bg-blue-700 text-center flex items-center justify-center text-sm font-medium transition-colors"
+                                },
+                                    "导入数据",
+                                    React.createElement("input", {
+                                        type: "file",
+                                        accept: ".json,.xlsx,.xls,.csv",
+                                        className: "hidden",
+                                        onChange: (e) => {
+                                            handleImportFile(e.target.files?.[0]);
+                                            e.target.value = '';
+                                        }
+                                    })
+                                ),
+                                React.createElement("button", {
+                                    className: "cursor-pointer px-3 py-1.5 rounded-lg shadow bg-red-600 text-white hover:bg-red-700 text-sm font-medium transition-colors",
+                                    onClick: clearAllData
+                                }, "清空数据")
+                            )
+                        ),
+
+
+                        leftTab === 'products' && React.createElement("div", { className: "rounded-2xl border-2 border-gray-200 bg-white p-4 shadow-sm" },
+                            React.createElement("div", { className: "flex items-center justify-between mb-3" },
+                                React.createElement("div", { className: "flex gap-2" },
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'products' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('products')
+                                    }, "产品列表"),
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'recipes' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('recipes')
+                                    }, "配方管理"),
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'pops' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('pops')
+                                    }, "人口管理")
+                                ),
+                                React.createElement("div", { className: "flex gap-2 items-center" },
+                                    React.createElement("input", {
+                                    className: "flex-1 border rounded-xl px-2 py-1",
+                                    placeholder: "新增产品名",
+                                    value: newProduct,
+                                    onChange: e => setNewProduct(e.target.value)
+                                }),
+                                React.createElement("button", {
+                                    className: "cursor-pointer px-3 py-1 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors shadow",
+                                    onClick: () => {
+                                        const name = newProduct.trim();
+                                        if (name && !products.includes(name)) {
+                                            setProducts([...products, name]);
+                                            setNewProduct("");
+                                        }
+                                    }
+                                }, "添加")
+                                )
+                            ),
+                            products.length === 0 && React.createElement("div", { className: "text-gray-500 text-sm" }, "先添加产品，再在配方中选择"),
+                            products.length > 0 && React.createElement("div", { className: "divide-y" },
+                                products.map(p =>
+                                    React.createElement("div", { key: p, className: "py-2 flex items-center justify-between" },
+                                        React.createElement("span", { className: "truncate mr-2" }, p),
+                                        React.createElement("button", {
+                                            className: "cursor-pointer px-2 py-1 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition-colors",
+                                            onClick: () => setProducts(products.filter(x => x !== p))
+                                        }, "删除")
+                                    )
+                                )
+                            )
+                        ),
+
+                        leftTab === 'recipes' && React.createElement("div", { className: "flex-1 overflow-auto rounded-2xl border-2 border-gray-200 bg-white p-4 shadow-sm" },
+                            React.createElement("div", { className: "flex items-center justify-between mb-3" },
+                                React.createElement("div", { className: "flex gap-2" },
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'products' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('products')
+                                    }, "产品列表"),
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'recipes' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('recipes')
+                                    }, "配方管理"),
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'pops' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('pops')
+                                    }, "人口管理")
+                                ),
+                                React.createElement("div", { className: "flex gap-2 items-center" },
+                                    React.createElement("button", {
+                                        className: "cursor-pointer px-2 py-1 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium transition-colors shadow",
+                                        onClick: addRecipe
+                                    }, "+ 新增配方"),
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl text-sm font-medium transition-colors shadow ${autoLayout ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-green-600 text-white hover:bg-green-700'}`,
+                                        onClick: () => {
+                                            if (autoLayout) {
+                                                setManualPositions({ ...positionsMemory });
+                                            } else {
+                                                setManualPositions({});
+                                            }
+                                            setAutoLayout(v => !v);
+                                        },
+                                        title: "切换自动布局/手动拖拽"
+                                    }, autoLayout ? "关闭自动布局" : "开启自动布局")
+                                )
+                            ),
+                            recipes.length === 0 && React.createElement("div", { className: "text-gray-500 text-sm" }, "点击'新增配方'开始创建生产配方"),
+                            recipes.map((r, idx) =>
+                                React.createElement("div", {
+                                    key: r.id,
+                                    className: `p-4 rounded-2xl border-2 mb-4 cursor-pointer transition-all duration-200 shadow-sm ${selectedId === r.id ? 'ring-2 ring-blue-400 bg-blue-50 border-blue-200' : 'hover:bg-gray-50 hover:shadow-md border-gray-200'}`,
+                                    onClick: () => setSelectedId(r.id)
+                                },
+                                    React.createElement("div", { className: "flex items-center justify-between mb-3 pb-2 border-b border-gray-200" },
+                                        React.createElement("div", { className: "font-semibold text-gray-800" }, `#${idx + 1} ${r.product || "未命名配方"}`),
+                                        React.createElement("button", {
+                                            className: "cursor-pointer px-2 py-1 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition-colors flex items-center gap-1",
+                                            onClick: (e) => {
+                                                e.stopPropagation(); // 防止触发配方选择
+                                                removeRecipe(r.id);
+                                            }
+                                        }, React.createElement("span", null, "🗑"), "删除")
+                                    ),
+                                    React.createElement("div", { className: "grid grid-cols-2 gap-2 text-sm text-gray-600" },
+                                        React.createElement("div", { className: "flex items-center gap-1" },
+                                            React.createElement("span", { className: "text-xs bg-gray-100 px-2 py-1 rounded" }, "循环"),
+                                            React.createElement("span", null, `${r.timeSec}s → ${r.outQty}`)
+                                        ),
+                                        React.createElement("div", { className: "flex items-center gap-1" },
+                                            React.createElement("span", { className: "text-xs bg-green-100 px-2 py-1 rounded" }, "期望"),
+                                            React.createElement("span", null, `${r.desiredPerSec}/秒`)
+                                        )
+                                    ),
+                                    React.createElement("div", { className: "flex gap-2 text-sm text-gray-600 mt-2" },
+                                        React.createElement("div", { className: "flex items-center gap-1 flex-1 min-w-0" },
+                                            React.createElement("span", { className: "text-xs bg-blue-100 px-2 py-1 rounded flex-shrink-0" }, "投入"),
+                                            React.createElement("span", { className: "truncate" }, r.inputs.map(i => `${i.item}×${i.qty}`).join("，") || "无")
+                                        ),
+                                        React.createElement("div", { className: "flex items-center gap-1 flex-1 min-w-0" },
+                                            React.createElement("span", { className: "text-xs bg-purple-100 px-2 py-1 rounded flex-shrink-0" }, "用工"),
+                                            React.createElement("span", { className: "truncate" }, (r.staff || []).map(s => `${s.pop}×${s.cnt}`).join("，") || "无")
+                                        )
+                                    ),
+                                    r.note && React.createElement("div", { className: "text-xs text-gray-500 mt-2 italic" }, r.note)
+                                )
+                            )
+                        ),
+
+                        leftTab === 'pops' && React.createElement("div", { className: "flex-1 overflow-auto rounded-2xl border-2 border-gray-200 bg-white p-4 shadow-sm" },
+                            React.createElement("div", { className: "flex items-center justify-between mb-3" },
+                                React.createElement("div", { className: "flex gap-2" },
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'products' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('products')
+                                    }, "产品列表"),
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'recipes' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('recipes')
+                                    }, "配方管理"),
+                                    React.createElement("button", {
+                                        className: `cursor-pointer px-2 py-1 rounded-xl shadow border text-sm ${leftTab === 'pops' ? 'bg-blue-600 text-white' : 'bg-white'}`,
+                                        onClick: () => setLeftTab('pops')
+                                    }, "人口管理")
+                                ),
+                                React.createElement("div", { className: "flex gap-2 items-center" },
+                                    React.createElement("button", {
+                                        className: "cursor-pointer px-2 py-1 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium transition-colors shadow",
+                                        onClick: addPopulation
+                                    }, "+ 新增人口种类")
+                                )
+                            ),
+                            populations.length === 0 && React.createElement("div", { className: "text-gray-500 text-sm" }, "添加人口种类，设置理想人数与消耗"),
+                            populations.map((p, idx) =>
+                                React.createElement("div", {
+                                    key: p.id,
+                                    className: `p-4 rounded-2xl border-2 mb-4 cursor-pointer transition-all duration-200 shadow-sm ${selectedId === p.id ? 'ring-2 ring-blue-400 bg-blue-50 border-blue-200' : 'hover:bg-gray-50 hover:shadow-md border-gray-200'}`,
+                                    onClick: () => setSelectedId(p.id)
+                                },
+                                    React.createElement("div", { className: "flex items-center justify-between mb-3 pb-2 border-b border-gray-200" },
+                                        React.createElement("div", { className: "font-semibold text-gray-800" }, `#${idx + 1} ${p.name || "未命名人口"}`),
+                                        React.createElement("button", {
+                                            className: "cursor-pointer px-2 py-1 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition-colors flex items-center gap-1",
+                                            onClick: (e) => {
+                                                e.stopPropagation();
+                                                removePopulation(p.id);
+                                            }
+                                        }, React.createElement("span", null, "🗑"), "删除")
+                                    ),
+                                    React.createElement("div", { className: "grid grid-cols-2 gap-2 text-sm text-gray-600" },
+                                        React.createElement("div", { className: "flex items-center gap-1" },
+                                            React.createElement("span", { className: "text-xs bg-gray-100 px-2 py-1 rounded" }, "理想人数"),
+                                            React.createElement("span", null, `${p.ideal || 0}`)
+                                        ),
+                                        React.createElement("div", { className: "flex items-center gap-1" },
+                                            React.createElement("span", { className: "text-xs bg-orange-100 px-2 py-1 rounded" }, "消耗项"),
+                                            React.createElement("span", null, `${(p.inputs || []).length}项`)
+                                        )
+                                    ),
+                                    React.createElement("div", { className: "flex gap-2 text-sm text-gray-600 mt-2" },
+                                        React.createElement("div", { className: "flex items-center gap-1 flex-1 min-w-0" },
+                                            React.createElement("span", { className: "text-xs bg-green-100 px-2 py-1 rounded flex-shrink-0" }, "消耗"),
+                                            React.createElement("span", { className: "truncate" }, (p.inputs || []).map(i => `${i.item}×${i.rate}`).join("，") || "无")
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+
+                        // 编辑面板固定在屏幕左下方，宽度与左侧栏一致
+                        selectedId && React.createElement("div", { 
+                            className: "fixed bottom-4 rounded-2xl border-2 border-blue-200 bg-white p-4 shadow-lg z-50 fixed-edit-panel",
+                            style: { 
+                                left: "1.5rem", 
+                                width: "calc(33.333333% - 2rem)", // 与col-span-4一致的宽度，考虑gap
+                                maxHeight: "40vh", 
+                                overflowY: "auto" 
+                            }
+                        },
+                            React.createElement("div", { className: "flex items-center justify-between mb-2" },
+                                React.createElement("div", { className: "text-lg font-semibold" }, 
+                                    recipes.find(r => r.id === selectedId) ? "配方编辑器" : 
+                                    populations.find(p => p.id === selectedId) ? "人口编辑器" : "编辑器"
+                                ),
+                                React.createElement("button", {
+                                    className: "cursor-pointer px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs font-medium transition-colors",
+                                    onClick: () => setSelectedId(null)
+                                }, "✕ 关闭")
+                            ),
+                            // 配方编辑
+                            recipes.filter(r => r.id === selectedId).map(r =>
+                                React.createElement("div", { key: r.id, className: "flex flex-col gap-2" },
+                                    React.createElement("div", { className: "grid grid-cols-2 gap-2" },
+                                        React.createElement("label", { className: "text-sm" }, "产品名",
+                                            React.createElement("select", {
+                                                className: "w-full border rounded-xl px-2 py-1",
+                                                value: r.product,
+                                                onChange: e => updateRecipe(r.id, { product: e.target.value })
+                                            },
+                                                React.createElement("option", { value: "" }, "选择产品"),
+                                                productOptions.map(p => React.createElement("option", { key: p, value: p }, p)),
+                                                r.product && !productOptions.includes(r.product) && React.createElement("option", { value: r.product }, r.product)
+                                            )
+                                        ),
+                                        React.createElement("label", { className: "text-sm" }, "循环时间(s)",
+                                            React.createElement("input", {
+                                                type: "number",
+                                                min: 0.1,
+                                                step: 0.1,
+                                                className: "w-full border rounded-xl px-2 py-1",
+                                                value: r.timeSec,
+                                                onChange: e => updateRecipe(r.id, { timeSec: parseFloat(e.target.value) || 0 })
+                                            })
+                                        ),
+                                        React.createElement("label", { className: "text-sm" }, "每循环产量",
+                                            React.createElement("input", {
+                                                type: "number",
+                                                min: 0,
+                                                step: 0.1,
+                                                className: "w-full border rounded-xl px-2 py-1",
+                                                value: r.outQty,
+                                                onChange: e => updateRecipe(r.id, { outQty: parseFloat(e.target.value) || 0 })
+                                            })
+                                        ),
+                                        React.createElement("label", { className: "text-sm" }, "期望净产量(/秒)",
+                                            React.createElement("input", {
+                                                type: "number",
+                                                min: 0,
+                                                step: 0.01,
+                                                className: "w-full border rounded-xl px-2 py-1",
+                                                value: r.desiredPerSec,
+                                                onChange: e => updateRecipe(r.id, { desiredPerSec: parseFloat(e.target.value) || 0 })
+                                            })
+                                        )
+                                    ),
+                                    React.createElement("label", { className: "text-sm" }, "备注",
+                                        React.createElement("input", {
+                                            className: "w-full border rounded-xl px-2 py-1",
+                                            value: r.note || "",
+                                            onChange: e => updateRecipe(r.id, { note: e.target.value })
+                                        })
+                                    ),
+                                    React.createElement("div", { className: "mt-2" },
+                                        React.createElement("div", { className: "flex items-center justify-between mb-3" },
+                                            React.createElement("div", { className: "font-semibold" }, "投入材料"),
+                                            React.createElement("button", {
+                                                className: "cursor-pointer px-2 py-1 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 text-xs font-medium transition-colors flex items-center gap-1",
+                                                onClick: () => addInput(r.id)
+                                            }, React.createElement("span", null, "+"), "新增投入")
+                                        ),
+                                        r.inputs.map((inp, idx) =>
+                                            React.createElement("div", { key: idx, className: "flex gap-2 items-center mb-2" },
+                                                React.createElement("select", {
+                                                    className: "flex-1 border rounded-xl px-2 py-1 h-8",
+                                                    value: inp.item,
+                                                    onChange: e => updateInput(r.id, idx, { item: e.target.value })
+                                                },
+                                                    React.createElement("option", { value: "" }, "选择产品"),
+                                                    productOptions.map(p => React.createElement("option", { key: p, value: p }, p)),
+                                                    inp.item && !productOptions.includes(inp.item) && React.createElement("option", { value: inp.item }, inp.item)
+                                                ),
+                                                React.createElement("input", {
+                                                    type: "number",
+                                                    min: 0,
+                                                    step: 0.01,
+                                                    className: "w-20 border rounded-xl px-2 py-1 h-8",
+                                                    placeholder: "数量",
+                                                    value: inp.qty,
+                                                    onChange: e => updateInput(r.id, idx, { qty: parseFloat(e.target.value) || 0 })
+                                                }),
+                                                React.createElement("button", {
+                                                    className: "cursor-pointer w-8 h-8 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition-colors flex items-center justify-center",
+                                                    onClick: () => removeInput(r.id, idx)
+                                                }, React.createElement("span", null, "✕"))
+                                            )
+                                        )
+                                    ),
+                                    React.createElement("div", { className: "mt-2" },
+                                        React.createElement("div", { className: "flex items-center justify-between mb-3" },
+                                            React.createElement("div", { className: "font-semibold" }, "用工需求 每厂"),
+                                            React.createElement("button", {
+                                                className: "cursor-pointer px-2 py-1 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 text-xs font-medium transition-colors flex items-center gap-1",
+                                                onClick: () => addStaff(r.id)
+                                            }, React.createElement("span", null, "+"), "新增用工")
+                                        ),
+                                        (r.staff || []).map((st, idx) =>
+                                            React.createElement("div", { key: idx, className: "flex gap-2 items-center mb-2" },
+                                                React.createElement("select", {
+                                                    className: "flex-1 border rounded-xl px-2 py-1 h-8",
+                                                    value: st.pop || "",
+                                                    onChange: e => updateStaff(r.id, idx, { pop: e.target.value })
+                                                },
+                                                    React.createElement("option", { value: "" }, "选择人口种类"),
+                                                    populations.map(p => React.createElement("option", { key: p.id, value: p.name }, p.name)),
+                                                    st.pop && !populations.find(p => p.name === st.pop) && React.createElement("option", { value: st.pop }, st.pop)
+                                                ),
+                                                React.createElement("input", {
+                                                    className: "w-20 border rounded-xl px-2 py-1 h-8",
+                                                    type: "number",
+                                                    min: 0,
+                                                    step: 1,
+                                                    placeholder: "人数",
+                                                    value: st.cnt || 0,
+                                                    onChange: e => updateStaff(r.id, idx, { cnt: parseFloat(e.target.value) || 0 })
+                                                }),
+                                                React.createElement("button", {
+                                                    className: "cursor-pointer w-8 h-8 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition-colors flex items-center justify-center",
+                                                    onClick: () => removeStaff(r.id, idx)
+                                                }, React.createElement("span", null, "✕"))
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            // 人口编辑
+                            populations.filter(p => p.id === selectedId).map(p =>
+                                React.createElement("div", { key: p.id, className: "flex flex-col gap-2" },
+                                    React.createElement("div", { className: "grid grid-cols-2 gap-2" },
+                                        React.createElement("label", { className: "text-sm" }, "人口名称",
+                                            React.createElement("input", {
+                                                className: "w-full border rounded-xl px-2 py-1",
+                                                value: p.name,
+                                                onChange: e => updatePopulation(p.id, { name: e.target.value })
+                                            })
+                                        ),
+                                        React.createElement("label", { className: "text-sm" }, "理想人数",
+                                            React.createElement("input", {
+                                                type: "number",
+                                                min: 0,
+                                                step: 1,
+                                                className: "w-full border rounded-xl px-2 py-1",
+                                                value: p.ideal,
+                                                onChange: e => updatePopulation(p.id, { ideal: parseFloat(e.target.value) || 0 })
+                                            })
+                                        )
+                                    ),
+                                    React.createElement("div", { className: "mt-2" },
+                                        React.createElement("div", { className: "flex items-center justify-between mb-3" },
+                                            React.createElement("div", { className: "font-semibold" }, "每人消耗(/秒)"),
+                                            React.createElement("button", {
+                                                className: "cursor-pointer px-2 py-1 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 text-xs font-medium transition-colors flex items-center gap-1",
+                                                onClick: () => addPopInput(p.id)
+                                            }, React.createElement("span", null, "+"), "新增消耗")
+                                        ),
+                                        (p.inputs || []).map((inp, idx) =>
+                                            React.createElement("div", { key: idx, className: "flex gap-2 items-center mb-2" },
+                                                React.createElement("select", {
+                                                    className: "flex-1 border rounded-xl px-2 py-1 h-8",
+                                                    value: inp.item,
+                                                    onChange: e => updatePopInput(p.id, idx, { item: e.target.value })
+                                                },
+                                                    React.createElement("option", { value: "" }, "选择产品"),
+                                                    products.map(x => React.createElement("option", { key: x, value: x }, x)),
+                                                    inp.item && !products.includes(inp.item) && React.createElement("option", { value: inp.item }, inp.item)
+                                                ),
+                                                React.createElement("input", {
+                                                    type: "number",
+                                                    step: 0.001,
+                                                    className: "w-20 border rounded-xl px-2 py-1 h-8",
+                                                    placeholder: "消耗率",
+                                                    value: inp.rate,
+                                                    onChange: e => updatePopInput(p.id, idx, { rate: parseFloat(e.target.value) || 0 })
+                                                }),
+                                                React.createElement("button", {
+                                                    className: "cursor-pointer w-8 h-8 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition-colors flex items-center justify-center",
+                                                    onClick: () => removePopInput(p.id, idx)
+                                                }, React.createElement("span", null, "✕"))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+
+                    ),
+
+                    React.createElement("div", { className: "col-span-8 flex flex-col gap-4" },
+                        React.createElement("div", { className: "text-xl font-bold mb-0" }, "供需依赖图与结果"),
+                        React.createElement("div", { className: "h-[520px] rounded-2xl border-2 border-gray-200 bg-white shadow-sm" },
+                            (() => {
+                                try {
+                                    const FlowComponent = ReactFlow.default || ReactFlow;
+                                    const Background = ReactFlow.Background;
+                                    const Controls = ReactFlow.Controls;
+                                    const MiniMap = ReactFlow.MiniMap;
+                                    
+                                    if (!FlowComponent) {
+                                        return React.createElement("div", { 
+                                            className: "flex items-center justify-center h-full text-gray-500" 
+                                        }, "ReactFlow 组件未找到");
+                                    }
+                                    
+                                    // 定义节点类型
+                                    const nodeTypes = {
+                                        dynamic: DynamicNode
+                                    };
+                                    
+                                    return React.createElement(FlowComponent, {
+                                        nodes: nodes,
+                                        edges: edges,
+                                        nodeTypes: nodeTypes,  // 注册动态节点类型
+                                        fitView: false,  // 禁用自动适应，保持计算的位置
+                                        fitViewOptions: { padding: 0.1 },
+                                        minZoom: 0.1,
+                                        maxZoom: 2.0,
+                                        nodesDraggable: true,
+                                        nodesConnectable: false,  // 禁用手动连接
+                                        elementsSelectable: true,
+                                        snapToGrid: true,
+                                        snapGrid: [20, 20],  // 网格对齐
+                                        connectionLineType: 'smoothstep',
+                                        defaultViewport: { x: 50, y: 50, zoom: 0.8 },  // 设置默认视图
+                                        onInit: (instance) => setReactFlowInstance(instance),  // 保存实例引用
+                                        defaultEdgeOptions: {
+                                            type: 'smoothstep',
+                                            style: { strokeWidth: 2, stroke: '#6366f1' }
+                                        },
+                                        onNodeDragStop: (e, node) => {
+                                            const newPos = { x: node.position.x, y: node.position.y };
+                                            setPositionsMemory(prev => ({ ...prev, [node.id]: newPos }));
+                                            
+                                            // 如果当前是手动布局模式，同时更新手动位置记录
+                                            if (!autoLayout) {
+                                                setManualPositions(prev => ({ ...prev, [node.id]: newPos }));
+                                            }
+                                        }
+                                    },
+                                        Background && React.createElement(Background, { gap: 12, size: 1 }),
+                                        Controls && React.createElement(Controls),
+                                        MiniMap && React.createElement(MiniMap)
+                                    );
+                                } catch (error) {
+                                    console.error('ReactFlow 渲染错误:', error);
+                                    return React.createElement("div", { 
+                                        className: "flex items-center justify-center h-full text-red-500" 
+                                    }, "ReactFlow 渲染失败: " + error.message);
+                                }
+                            })()
+                        ),
+                        React.createElement("div", { className: "rounded-2xl border-2 border-gray-200 bg-white p-4 shadow-sm" },
+                            React.createElement("div", { className: "text-lg font-semibold" }, "计算结果"),
+                            !plan && React.createElement("div", { className: "text-sm text-gray-500" }, "添加配方后自动计算"),
+                            plan?.error && React.createElement("div", { className: "text-red-600 text-sm" }, plan.error),
+                            plan && !plan.error && React.createElement("div", { className: "mt-2 text-sm" },
+                                React.createElement("table", { className: "w-full text-left table-fixed" },
+                                    React.createElement("colgroup", null,
+                                        React.createElement("col", { style: { width: "25%" } }),
+                                        React.createElement("col", { style: { width: "25%" } }),
+                                        React.createElement("col", { style: { width: "25%" } }),
+                                        React.createElement("col", { style: { width: "25%" } })
+                                    ),
+                                    React.createElement("thead", null,
+                                        React.createElement("tr", { className: "border-b bg-gray-50" },
+                                            React.createElement("th", { className: "py-2 px-2 font-semibold" }, "产品"),
+                                            React.createElement("th", { className: "py-2 px-2 font-semibold" }, "需求速率(/秒)"),
+                                            React.createElement("th", { className: "py-2 px-2 font-semibold" }, "单厂产能(/秒)"),
+                                            React.createElement("th", { className: "py-2 px-2 font-semibold" }, "工厂数量")
+                                        )
+                                    ),
+                                    React.createElement("tbody", null,
+                                        recipes.map(r => {
+                                            const need = plan.requiredRate.get(r.product) || 0;
+                                            const single = plan.singleCapacity.get(r.product) || 0;
+                                            const fac = plan.factoriesNeeded.get(r.product) || 0;
+                                            return React.createElement("tr", { key: r.id, className: "border-b hover:bg-gray-50" },
+                                                React.createElement("td", { className: "py-2 px-2" }, r.product),
+                                                React.createElement("td", { className: "py-2 px-2" }, need.toFixed(3)),
+                                                React.createElement("td", { className: "py-2 px-2" }, single.toFixed(3)),
+                                                React.createElement("td", { className: "py-2 px-2" }, fac)
+                                            );
+                                        })
+                                    )
+                                ),
+                                populations.length > 0 && React.createElement("div", { className: "mt-6 pt-4 border-t border-gray-200" },
+                                    React.createElement("div", { className: "font-semibold mb-3" }, "人口与用工"),
+                                    React.createElement("table", { className: "w-full text-left table-fixed" },
+                                        React.createElement("colgroup", null,
+                                            React.createElement("col", { style: { width: "25%" } }),
+                                            React.createElement("col", { style: { width: "25%" } }),
+                                            React.createElement("col", { style: { width: "25%" } }),
+                                            React.createElement("col", { style: { width: "25%" } })
+                                        ),
+                                        React.createElement("thead", null,
+                                            React.createElement("tr", { className: "border-b bg-gray-50" },
+                                                React.createElement("th", { className: "py-2 px-2 font-semibold" }, "人口种类"),
+                                                React.createElement("th", { className: "py-2 px-2 font-semibold" }, "理想人数"),
+                                                React.createElement("th", { className: "py-2 px-2 font-semibold" }, "所需人数"),
+                                                React.createElement("th", { className: "py-2 px-2 font-semibold" }, "有效人数")
+                                            )
+                                        ),
+                                        React.createElement("tbody", null,
+                                            populations.map(p => {
+                                                const need = staffNeed.get(p.name) || 0;
+                                                const eff = Math.max(p.ideal || 0, need);
+                                                return React.createElement("tr", { key: p.id, className: "border-b hover:bg-gray-50" },
+                                                    React.createElement("td", { className: "py-2 px-2" }, p.name),
+                                                    React.createElement("td", { className: "py-2 px-2" }, p.ideal || 0),
+                                                    React.createElement("td", { className: "py-2 px-2" }, need),
+                                                    React.createElement("td", { className: "py-2 px-2" }, eff)
+                                                );
+                                            })
+                                        )
+                                    )
+                                ),
+                                extraDemand && [...extraDemand.entries()].length > 0 && React.createElement("div", { className: "text-xs text-gray-600 mt-2" }, "人口消费被折算为额外需求并参与工厂计算")
+                            )
+                        ),
+                        React.createElement("div", { className: "text-xs text-gray-500" }, "说明：所有数值按每秒换算。工厂数量向上取整。人口消费按每人每秒计。若理想人数少于用工需求则按用工需求计。自动布局可关闭后手动拖拽，并记忆坐标。")
+                    )
+                );
+            }
+
+            try {
+                ReactDOM.render(React.createElement(App), document.getElementById('root'));
+                console.log('应用渲染成功！');
+            } catch (error) {
+                console.error('渲染应用时出错:', error);
+                document.getElementById('root').innerHTML = `<div style="color: red; text-align: center; padding: 20px;">应用渲染失败: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

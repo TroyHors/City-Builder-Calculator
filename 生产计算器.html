@@ -493,12 +493,12 @@
                     if (!r) continue;
                     const Dp = requiredRate.get(p) || 0;
                     if (Dp <= 0) continue;
-                    const outPerSec = r.timeSec > 0 ? r.outQty / r.timeSec : 0;
-                    if (outPerSec <= 0) continue;
-                    const cyclesPerSec = Dp / outPerSec;
+                    // 防止除以零
+                    if (r.outQty <= 0) continue;
+                    // 计算原料需求：每秒需要的产品数 × (每周期消耗的原料 / 每周期产出的产品)
                     for (const inp of r.inputs) {
                         if (!inp.item) continue;
-                        const needInpPerSec = cyclesPerSec * inp.qty;
+                        const needInpPerSec = Dp * (inp.qty / r.outQty);
                         requiredRate.set(inp.item, (requiredRate.get(inp.item) || 0) + needInpPerSec);
                     }
                 }
